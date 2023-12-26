@@ -1,0 +1,58 @@
+from flask import Flask, request, jsonify
+import requests
+
+app = Flask(__name__)
+
+# Your GroupMe bot's access token
+ACCESS_TOKEN = "INSERT_PERSONAL_ACCESS_KEY_HERE"
+
+@app.route('/')
+def index():
+    return '<h1>Welcome to the Home Page! How did you get here... come back when development is finished.</h1>'
+
+# GroupMe webhook endpoint
+@app.route('/api', methods=['POST'])
+def webhook():
+    data = request.get_json()
+
+    # Verify the webhook during setup
+    if 'challenge' in data:
+        print('Received challenge:', data['challenge'])
+        return jsonify({'challenge': data['challenge']})
+
+    # Check if the message is from a user
+    if 'user_id' in data['data'] and 'text' in data['data']:
+        user_id = data['data']['user_id']
+        message_text = data['data']['text'].lower()
+
+        # Check for keywords and respond accordingly
+        if 'hello' in message_text:
+            send_message(user_id, 'Hello there!')
+
+        #TODO
+        # Add more keyword checks and responses as needed
+        
+
+    return jsonify({'status': 'success'})
+
+def send_message(group_id, text):
+    # Use the GroupMe API to send a message
+    url = f"https://api.groupme.com/v3/groups/{group_id}/messages"
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        'message': {
+            'text': text
+        },
+        'token': ACCESS_TOKEN
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+
+    # Check the response for errors and handle them if necessary
+    if response.status_code != 200:
+        print(f"Error sending message: {response.text}")
+
+#if __name__ == '__main__':
+#     Run the Flask app on port 5000, allowing external access
+#     app.run()
+#     app.run(host='0.0.0.0', port=5000)
